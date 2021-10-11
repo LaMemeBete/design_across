@@ -18,6 +18,7 @@ sim_max_range = 150
 
 def plot_values(nodes, t, final_csv):
     for node in nodes:
+        print(t)
         node_2 = random.randint(0, len(nodes)-1)
         node_3 = random.randint(0, len(nodes)-1)
         node_4 = random.randint(0, len(nodes)-1)
@@ -173,8 +174,8 @@ if __name__ == "__main__":
     generation = 0
     while True:
         nodes, food = generate_cycles(nodes, food, cycles, p_neg, p_pos, p_neu, b_pos, b_neg, b_neu, generation)
-        nodes_string = plot_values(nodes, 0, "")
-        food_string = plot_food(food, 0, "")
+        nodes_string = plot_values(nodes, generation, "")
+        food_string = plot_food(food, generation, "")
         sock.sendto(str.encode(nodes_string + food_string), (UDP_IP, UDP_PORT))
         if len(food) == 0:
             break
