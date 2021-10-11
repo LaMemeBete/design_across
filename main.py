@@ -21,14 +21,14 @@ def plot_values(nodes, t, final_csv):
         node_2 = random.randint(0, len(nodes)-1)
         node_3 = random.randint(0, len(nodes)-1)
         node_4 = random.randint(0, len(nodes)-1)
-        final_csv += str(node['cord'][0]) + ','+ str(node['cord'][1]) + ','+ str(node['cord'][2]) + ','+ str(nodes[node_2]['cord'][0]) + ',' + str(nodes[node_2]['cord'][1]) + ',' + str(nodes[node_2]['cord'][2]) + ','+ str(t) + 'line' + '\n'
-        final_csv += str(node['cord'][0]) + ','+ str(node['cord'][1]) + ','+ str(node['cord'][2]) + ','+ str(nodes[node_3]['cord'][0]) + ',' + str(nodes[node_3]['cord'][1]) + ',' + str(nodes[node_3]['cord'][2]) + ','+ str(t) + 'line' + '\n'
+        final_csv += str(node['cord'][0]) + ','+ str(node['cord'][1]) + ','+ str(node['cord'][2]) + ','+ str(nodes[node_2]['cord'][0]) + ',' + str(nodes[node_2]['cord'][1]) + ',' + str(nodes[node_2]['cord'][2]) + ','+ str(t) + ',' + 'line' + '\n'
+        final_csv += str(node['cord'][0]) + ','+ str(node['cord'][1]) + ','+ str(node['cord'][2]) + ','+ str(nodes[node_3]['cord'][0]) + ',' + str(nodes[node_3]['cord'][1]) + ',' + str(nodes[node_3]['cord'][2]) + ','+ str(t) + ',' + 'line' + '\n'
         #final_csv += str(node['cord'][0]) + ','+ str(node['cord'][1]) + ','+ str(node['cord'][2]) + ','+ str(nodes[node_4]['cord'][0]) + ',' + str(nodes[node_4]['cord'][1]) + ',' + str(nodes[node_4]['cord'][2]) + ','+ str(t) + 'line' + '\n'
     return final_csv
 
 def plot_food(food, t, final_food_csv):
     for f in food:
-        final_food_csv += str(f['cord'][0]) + ',' + str(f['cord'][1]) + ',' + str(f['cord'][2]) + ',' + str(f['r']) + ',' + str(t) + 'dot' + '\n'
+        final_food_csv += str(f['cord'][0]) + ',' + str(f['cord'][1]) + ',' + str(f['cord'][2]) + ',' + str(f['r']) + ',' + str(t) + ',' + 'dot' + '\n'
     return final_food_csv
 
 def check_node_near_food(node, food):
