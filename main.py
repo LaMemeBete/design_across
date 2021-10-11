@@ -95,7 +95,7 @@ def generate_grid_food(n_layers, min_bound, max_bound, r_range):
             i += 1
     return food
 
-def generate_cycles(nodes, food, cycles, p_neg, p_pos, p_neu, b_pos, b_neg, b_neu):
+def generate_cycles(nodes, food, cycles, p_neg, p_pos, p_neu, b_pos, b_neg, b_neu, generation):
     final_csv = ''
     final_food_csv = ''
     for t in range(cycles):
@@ -147,8 +147,8 @@ def generate_cycles(nodes, food, cycles, p_neg, p_pos, p_neu, b_pos, b_neg, b_ne
         print(len(nodes))
         print('----')
         nodes = nodes + new_nodes
-        final_csv = plot_values(nodes, t, final_csv)
-        final_food_csv = plot_food(food, t, final_food_csv)
+        final_csv = plot_values(nodes, generation, final_csv)
+        final_food_csv = plot_food(food, generation, final_food_csv)
     text_file = open("res.txt", "w")
     n = text_file.write(final_csv)
     text_file.close()
@@ -170,13 +170,15 @@ if __name__ == "__main__":
     nodes = init_points(5,1)
     
     food = init_food(20, sim_min_range, sim_max_range, 10)
+    generation = 0
     while True:
-        nodes, food = generate_cycles(nodes, food, cycles, p_neg, p_pos, p_neu, b_pos, b_neg, b_neu)
+        nodes, food = generate_cycles(nodes, food, cycles, p_neg, p_pos, p_neu, b_pos, b_neg, b_neu, generation)
         nodes_string = plot_values(nodes, 0, "")
         food_string = plot_food(food, 0, "")
         sock.sendto(str.encode(nodes_string + food_string), (UDP_IP, UDP_PORT))
         if len(food) == 0:
             break
+        generation += 1
 
     # make sure the 'COM#' is set according the Windows Device Manager
     
