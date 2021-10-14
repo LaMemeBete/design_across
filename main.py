@@ -12,18 +12,17 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # Internet socket.SOCK_D
 time_to_eat = 10
 population = ['g', 's', 'b']
 g_r = 0.4
-max_nodes = 10
+max_nodes = 5
 sim_min_range = -150
 sim_max_range = 150
 
 def plot_values(nodes, t, final_csv):
     for node in nodes:
-        print(t)
         node_2 = random.randint(0, len(nodes)-1)
         node_3 = random.randint(0, len(nodes)-1)
         node_4 = random.randint(0, len(nodes)-1)
-        final_csv += str(node['cord'][0]) + ','+ str(node['cord'][1]) + ','+ str(node['cord'][2]) + ','+ str(nodes[node_2]['cord'][0]) + ',' + str(nodes[node_2]['cord'][1]) + ',' + str(nodes[node_2]['cord'][2]) + ','+ str(t) + ',' + 'line' + '\n'
-        final_csv += str(node['cord'][0]) + ','+ str(node['cord'][1]) + ','+ str(node['cord'][2]) + ','+ str(nodes[node_3]['cord'][0]) + ',' + str(nodes[node_3]['cord'][1]) + ',' + str(nodes[node_3]['cord'][2]) + ','+ str(t) + ',' + 'line' + '\n'
+        final_csv += str(node['cord'][0]) + ','+ str(node['cord'][1]) + ','+ str(node['cord'][2]) + ','+ str(nodes[node_2]['cord'][0]) + ',' + str(nodes[node_2]['cord'][1]) + ',' + str(nodes[node_2]['cord'][2]) + ',' + str(t) + ',' + 'line' + '\n'
+        final_csv += str(node['cord'][0]) + ','+ str(node['cord'][1]) + ','+ str(node['cord'][2]) + ','+ str(nodes[node_3]['cord'][0]) + ',' + str(nodes[node_3]['cord'][1]) + ',' + str(nodes[node_3]['cord'][2]) + ',' + str(t) + ',' + 'line' + '\n'
         #final_csv += str(node['cord'][0]) + ','+ str(node['cord'][1]) + ','+ str(node['cord'][2]) + ','+ str(nodes[node_4]['cord'][0]) + ',' + str(nodes[node_4]['cord'][1]) + ',' + str(nodes[node_4]['cord'][2]) + ','+ str(t) + 'line' + '\n'
     return final_csv
 
@@ -43,7 +42,8 @@ def check_node_near_food(node, food):
     return [False, False, food]
 
 def find_closest_food(node, food, rand):
-    if rand:
+    rand = random.randint(0, len(food))
+    if rand == 1:
         if len(food) == 1:
             return food[0]
         elif len(food) == 0:
@@ -57,7 +57,7 @@ def find_closest_food(node, food, rand):
             closest_food = food[i]
     return closest_food
 
-def init_points(n, init_r):
+def init_points(n, init_r, factor):
     nodes = []
     for i in range(n):
         theta = 2*np.pi*random.random()
@@ -66,8 +66,8 @@ def init_points(n, init_r):
         x = r*np.cos(theta)
         y = r*np.sin(theta)
         z = r*np.cos(phi)
-        random_point = np.array([x, y, z])
-        nodes.append({'cord': np.array([x, y, z]), 'state': 'g'})
+        random_point = np.array([x, y, z]) + factor
+        nodes.append({'cord': random_point, 'state': 'g'})
     return nodes
 
 def init_food(n, min_bound, max_bound, r_range):
@@ -91,12 +91,12 @@ def generate_grid_food(n_layers, min_bound, max_bound, r_range):
                 x = j
                 y = i
                 z = k
-                food.append({'cord': np.array([2*x, 2*y, 2*z]), 'count': 0, 'r': r, 'type': True})
+                food.append({'cord': np.array([80*x, 80*y, 80*z]), 'count': 0, 'r': r, 'type': True})
                 j += 1
             i += 1
     return food
 
-def generate_cycles(nodes, food, cycles, p_neg, p_pos, p_neu, b_pos, b_neg, b_neu, generation):
+def generate_cycles(nodes, nodes_2, food, cycles, p_neg, p_pos, p_neu, b_pos, b_neg, b_neu, generation):
     final_csv = ''
     final_food_csv = ''
     for t in range(cycles):
@@ -148,6 +148,41 @@ def generate_cycles(nodes, food, cycles, p_neg, p_pos, p_neu, b_pos, b_neg, b_ne
         print(len(nodes))
         print('----')
         nodes = nodes + new_nodes
+
+        new_nodes = []
+        for i, node in enumerate(nodes_2):
+            is_near_food = check_node_near_food(nodes_2[i], food)
+            food = is_near_food[2]
+            if is_near_food[0] and is_near_food[1]:
+                weights = p_pos
+            elif is_near_food[0] and (is_near_food[1] == False):
+                weights = p_neg
+            else:
+                weights = p_neu
+            new_state = random.choices(population, weights=weights, k=1)[0]
+            node['state'] = new_state
+            closest_food = find_closest_food(node, food, False)
+            random_food = find_closest_food(node, food, True)
+            if closest_food==False or random_food == False:
+                break
+            if new_state == 'g':
+                nodes_2[i]['cord'] = node['cord'] + g_r*(-node['cord'] + closest_food['cord']) + 2*random.random()
+                nodes_2[i]['cord'] = node['cord'] + g_r*(-node['cord'] + random_food['cord']) + 2*random.random()
+            if new_state == 'b' and len(nodes_2) < max_nodes:
+                cord_1 = node['cord'] + g_r*(-node['cord'] + closest_food['cord']) + 2*random.random()
+                cord_2 = node['cord'] + g_r*(-node['cord'] + random_food['cord']) + 2*random.random()
+                new_node_1 = {'cord': cord_1, 'state': 'g'}
+                new_node_2 = {'cord': cord_2, 'state': 'g'}
+                new_nodes.append(new_node_1)
+                new_nodes.append(new_node_2)
+        for i, node in enumerate(nodes_2):
+            if node['state'] == 's':
+                del nodes_2[i]
+        print(len(food))
+        print(len(nodes_2))
+        print('----')
+        nodes_2 = nodes_2 + new_nodes
+
         final_csv = plot_values(nodes, generation, final_csv)
         final_food_csv = plot_food(food, generation, final_food_csv)
     text_file = open("res.txt", "w")
@@ -157,7 +192,7 @@ def generate_cycles(nodes, food, cycles, p_neg, p_pos, p_neu, b_pos, b_neg, b_ne
     text_file = open("food_res.txt", "w")
     n = text_file.write(final_food_csv)
     text_file.close()
-    return nodes, food
+    return nodes, nodes_2, food
 
 if __name__ == "__main__":
     cycles = 1
@@ -168,15 +203,23 @@ if __name__ == "__main__":
     b_pos = 1
     b_neg = 1
     b_neu = 1
-    nodes = init_points(5,1)
+    nodes = init_points(5,1, -1000)
+    nodes_2 = init_points(10,1, 100)
     
-    food = init_food(20, sim_min_range, sim_max_range, 10)
+    #food = init_food(40, sim_min_range, sim_max_range, 10)
+    food = generate_grid_food(2, -5, 5, 10)
+    final_nodes = ""
+
     generation = 0
     while True:
-        nodes, food = generate_cycles(nodes, food, cycles, p_neg, p_pos, p_neu, b_pos, b_neg, b_neu, generation)
+        nodes, nodes_2, food = generate_cycles(nodes, nodes_2, food, cycles, p_neg, p_pos, p_neu, b_pos, b_neg, b_neu, generation)
         nodes_string = plot_values(nodes, generation, "")
+        nodes_2_string = plot_values(nodes_2, generation, "")
         food_string = plot_food(food, generation, "")
-        sock.sendto(str.encode(nodes_string + food_string), (UDP_IP, UDP_PORT))
+        '''tmp_food = food_string.split("\n")
+        for i in range(len(tmp_food)):
+            sock.sendto(str.encode(tmp_food[i]+"\n"), (UDP_IP, UDP_PORT))'''
+        sock.sendto(str.encode(nodes_string+nodes_2_string+food_string), (UDP_IP, UDP_PORT))
         if len(food) == 0:
             break
         generation += 1
