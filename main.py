@@ -54,6 +54,7 @@ def find_closest_food(node, food, rand):
     closest_food = {'cord':np.array([0,0,0]), 'r':1, 'type':True, 'count': 0}
     for i in range(len(food)):
         if np.linalg.norm(node['cord'] - np.array(food[i]['cord'])) < max_val:
+            max_val = np.linalg.norm(node['cord'] - np.array(food[i]['cord']))
             closest_food = food[i]
     return closest_food
 
