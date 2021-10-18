@@ -253,12 +253,20 @@ if __name__ == "__main__":
     food = subtract_intersecting_food(negative_food, food)
     final_nodes = ""
 
+    food_csv_string = ""
+    nodes_csv_string = ""
+    nodes_2_csv_String = ""
+
+
     generation = 0
     while True:
         nodes, nodes_2, food = generate_cycles(nodes, nodes_2, food, cycles, p_neg, p_pos, p_neu, b_pos, b_neg, b_neu, generation, negative_food)
         nodes_string = plot_values(nodes, generation, "")
         nodes_2_string = plot_values(nodes_2, generation, "")
         food_string = plot_food(food, generation, "")
+        food_csv_string += food_string
+        nodes_csv_string += nodes_string
+        nodes_2_csv_String += nodes_2_string
         '''tmp_food = food_string.split("\n")
         for i in range(len(tmp_food)):
             sock.sendto(str.encode(tmp_food[i]+"\n"), (UDP_IP, UDP_PORT))'''
@@ -266,6 +274,12 @@ if __name__ == "__main__":
         if len(food) == 0:
             break
         generation += 1
-
+    text_file = open("res.txt", "w")
+    n = text_file.write(food_csv_string)
+    text_file.close()
+    
+    text_file = open("food_res.txt", "w")
+    n = text_file.write(food_csv_string)
+    text_file.close()
     # make sure the 'COM#' is set according the Windows Device Manager
     
