@@ -15,6 +15,8 @@ g_r = 0.4
 max_nodes = 5
 sim_min_range = -150
 sim_max_range = 150
+x_1 = 1
+y_1 = 1
 
 def plot_values(nodes, t, final_csv):
     for node in nodes:
@@ -97,7 +99,33 @@ def generate_grid_food(n_layers, min_bound, max_bound, r_range):
             i += 1
     return food
 
-def generate_cycles(nodes, nodes_2, food, cycles, p_neg, p_pos, p_neu, b_pos, b_neg, b_neu, generation):
+def subtract_intersecting_food(negative_food, food):
+    food_to_pop = []
+    for i, f in enumerate(food):
+        for j, n_f in enumerate(negative_food):
+            tmp_dist = np.linalg.norm(n_f['r'] - f['r'])
+            if tmp_dist <= f['r'] and tmp_dist <= n_f['r']:
+                food_to_pop.append(i)
+    food_to_pop.sort(reverse=False)
+    shift = 0
+    for i in food_to_pop:
+        food.pop(i-shift)
+        shift += 1
+    return food
+
+def find_intersect_food(negative_food, vector):
+    for i in negative_food:
+        if np.linalg.norm(vector - np.array(i['cord'])) <= i['r']:
+            return i
+    return False
+
+def check_if_intersect(negative_food, vector):
+    for i in negative_food:
+        if np.linalg.norm(vector - np.array(i['cord'])) <= i['r']:
+            return True
+    return False
+
+def generate_cycles(nodes, nodes_2, food, cycles, p_neg, p_pos, p_neu, b_pos, b_neg, b_neu, generation, negative_food):
     final_csv = ''
     final_food_csv = ''
     for t in range(cycles):
@@ -134,10 +162,21 @@ def generate_cycles(nodes, nodes_2, food, cycles, p_neg, p_pos, p_neu, b_pos, b_
             if closest_food==False or random_food == False:
                 break
             if new_state == 'g':
-                nodes[i]['cord'] = node['cord'] + g_r*(-node['cord'] + closest_food['cord']) + 2*random.random()
+                new_direction = node['cord'] + g_r*(-node['cord'] + closest_food['cord']) + 2*random.random()
+                while check_if_intersect(negative_food, new_direction):
+                    n_f = find_intersect_food(negative_food, new_direction)
+                    if n_f != False:
+                        print('innn')
+                        norm_n_f = -n_f['cord'] + node['cord']
+                        z_1 = -(norm_n_f[0]+norm_n_f[1])/norm_n_f[3]
+                        new_direction = node['cord'] + g_r*(-node['cord'] + np.array([x_1,y_1, z_1]))
+                nodes[i]['cord'] = new_direction
             if new_state == 'b' and len(nodes) < max_nodes:
                 cord_1 = node['cord'] + g_r*(-node['cord'] + closest_food['cord']) + 2*random.random()
                 cord_2 = node['cord'] + g_r*(-node['cord'] + random_food['cord']) + 2*random.random()
+                while check_if_intersect(negative_food, cord_1) and check_if_intersect(negative_food, cord_2):
+                    cord_1 = node['cord'] + g_r*(-node['cord'] + closest_food['cord']) + 2*random.random()
+                    cord_2 = node['cord'] + g_r*(-node['cord'] + random_food['cord']) + 2*random.random()
                 new_node_1 = {'cord': cord_1, 'state': 'g'}
                 new_node_2 = {'cord': cord_2, 'state': 'g'}
                 new_nodes.append(new_node_1)
@@ -150,7 +189,7 @@ def generate_cycles(nodes, nodes_2, food, cycles, p_neg, p_pos, p_neu, b_pos, b_
         print('----')
         nodes = nodes + new_nodes
 
-        new_nodes = []
+        '''new_nodes = []
         for i, node in enumerate(nodes_2):
             is_near_food = check_node_near_food(nodes_2[i], food)
             food = is_near_food[2]
@@ -182,7 +221,7 @@ def generate_cycles(nodes, nodes_2, food, cycles, p_neg, p_pos, p_neu, b_pos, b_
         print(len(food))
         print(len(nodes_2))
         print('----')
-        nodes_2 = nodes_2 + new_nodes
+        nodes_2 = nodes_2 + new_nodes'''
 
         final_csv = plot_values(nodes, generation, final_csv)
         final_food_csv = plot_food(food, generation, final_food_csv)
@@ -207,13 +246,16 @@ if __name__ == "__main__":
     nodes = init_points(5,1, -1000)
     nodes_2 = init_points(10,1, 100)
     
-    #food = init_food(40, sim_min_range, sim_max_range, 10)
-    food = generate_grid_food(2, -5, 5, 10)
+    food = init_food(60, sim_min_range, sim_max_range, 10)
+    #food = generate_grid_food(2, -5, 5, 10)
+
+    negative_food = [{'cord': np.array([10, 10, 10]), 'r': 5, 'type': True}]
+    food = subtract_intersecting_food(negative_food, food)
     final_nodes = ""
 
     generation = 0
     while True:
-        nodes, nodes_2, food = generate_cycles(nodes, nodes_2, food, cycles, p_neg, p_pos, p_neu, b_pos, b_neg, b_neu, generation)
+        nodes, nodes_2, food = generate_cycles(nodes, nodes_2, food, cycles, p_neg, p_pos, p_neu, b_pos, b_neg, b_neu, generation, negative_food)
         nodes_string = plot_values(nodes, generation, "")
         nodes_2_string = plot_values(nodes_2, generation, "")
         food_string = plot_food(food, generation, "")
