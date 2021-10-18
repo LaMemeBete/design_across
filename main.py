@@ -103,8 +103,8 @@ def subtract_intersecting_food(negative_food, food):
     food_to_pop = []
     for i, f in enumerate(food):
         for j, n_f in enumerate(negative_food):
-            tmp_dist = np.linalg.norm(n_f['r'] - f['r'])
-            if tmp_dist <= f['r'] and tmp_dist <= n_f['r']:
+            tmp_dist = np.linalg.norm(n_f['cord'] - f['cord'])
+            if tmp_dist <= f['r'] or tmp_dist <= n_f['r']:
                 food_to_pop.append(i)
     food_to_pop.sort(reverse=False)
     shift = 0
@@ -246,11 +246,12 @@ if __name__ == "__main__":
     nodes = init_points(5,1, -1000)
     nodes_2 = init_points(10,1, 100)
     
-    food = init_food(60, sim_min_range, sim_max_range, 10)
+    food = init_food(500, sim_min_range, sim_max_range, 5)
     #food = generate_grid_food(2, -5, 5, 10)
 
-    negative_food = [{'cord': np.array([10, 10, 10]), 'r': 5, 'type': True}]
+    negative_food = [{'cord': np.array([10, 10, 10]), 'r': 100, 'type': True}]
     food = subtract_intersecting_food(negative_food, food)
+    print(food)
     final_nodes = ""
 
     food_csv_string = ""
@@ -270,12 +271,12 @@ if __name__ == "__main__":
         '''tmp_food = food_string.split("\n")
         for i in range(len(tmp_food)):
             sock.sendto(str.encode(tmp_food[i]+"\n"), (UDP_IP, UDP_PORT))'''
-        sock.sendto(str.encode(nodes_string+nodes_2_string+food_string), (UDP_IP, UDP_PORT))
+        #sock.sendto(str.encode(nodes_string+nodes_2_string+food_string), (UDP_IP, UDP_PORT))
         if len(food) == 0:
             break
         generation += 1
     text_file = open("res.txt", "w")
-    n = text_file.write(food_csv_string)
+    n = text_file.write(nodes_csv_string)
     text_file.close()
     
     text_file = open("food_res.txt", "w")
