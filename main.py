@@ -14,8 +14,8 @@ time_to_eat = 1
 population = ['g', 's', 'b']
 g_r = 0.4
 max_nodes = 10
-sim_min_range = -400
-sim_max_range = 400
+sim_min_range = -150
+sim_max_range = 150
 x_1 = 1
 y_1 = 1
 
@@ -288,10 +288,10 @@ if __name__ == "__main__":
     nodes = init_points(5, 1, -110)
     nodes_2 = init_points(10,1, 0)
     
-    food = init_food(10, sim_min_range, sim_max_range, 5)
+    food = init_food(1000, sim_min_range, sim_max_range, 5)
     #food = generate_grid_food(2, -5, 5, 10)
 
-    negative_food = [{'cord': np.array([0, 0, 0]), 'r': 100, 'type': True}, {'cord': np.array([180, 180, 0]), 'r': 70, 'type': True}]
+    negative_food = [{'cord': np.array([0, 0, 0]), 'r': 50, 'type': True}, {'cord': np.array([90, 90, 0]), 'r': 40, 'type': True}]
     food = subtract_intersecting_food(negative_food, food)
     print(food)
     final_nodes = ""
