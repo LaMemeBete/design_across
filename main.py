@@ -8,15 +8,27 @@ import random
 UDP_IP = "127.0.0.1"
 UDP_PORT = 6400
 MESSAGE = ""
+attempts = 10
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # Internet socket.SOCK_DGRAM) # UDP
-time_to_eat = 10
+time_to_eat = 1
 population = ['g', 's', 'b']
 g_r = 0.4
-max_nodes = 5
-sim_min_range = -150
-sim_max_range = 150
+max_nodes = 10
+sim_min_range = -400
+sim_max_range = 400
 x_1 = 1
 y_1 = 1
+
+def LinePlaneCollision(planeNormal, planePoint, rayDirection, rayPoint, epsilon=1e-100):
+    ndotu = planeNormal.dot(rayDirection)
+    if abs(ndotu) < epsilon:
+        print('enters')
+        raise RuntimeError("no intersection or line is within plane")
+
+    w = rayPoint - planePoint
+    si = -planeNormal.dot(w) / ndotu
+    Psi = w + si * rayDirection + planePoint
+    return Psi
 
 def plot_values(nodes, t, final_csv):
     for node in nodes:
@@ -68,7 +80,8 @@ def init_points(n, init_r, factor):
         r = init_r*random.random()
         x = r*np.cos(theta)
         y = r*np.sin(theta)
-        z = r*np.cos(phi)
+        #z = r*np.cos(phi)
+        z = 0
         random_point = np.array([x, y, z]) + factor
         nodes.append({'cord': random_point, 'state': 'g'})
     return nodes
@@ -79,7 +92,8 @@ def init_food(n, min_bound, max_bound, r_range):
         r = r_range*random.random()+3
         x = random.uniform(min_bound, max_bound)
         y = random.uniform(min_bound, max_bound)
-        z = random.uniform(min_bound, max_bound)
+        #z = random.uniform(min_bound, max_bound)
+        z = 0
         food.append({'cord': np.array([x, y, z]), 'count': 0, 'r': r, 'type': True})
     return food
 
@@ -162,25 +176,53 @@ def generate_cycles(nodes, nodes_2, food, cycles, p_neg, p_pos, p_neu, b_pos, b_
             if closest_food==False or random_food == False:
                 break
             if new_state == 'g':
-                new_direction = node['cord'] + g_r*(-node['cord'] + closest_food['cord']) + 2*random.random()
+                litmus = False
+                counter = 0
+                new_direction = node['cord'] + g_r*(-node['cord'] + closest_food['cord']) #+ 2*random.random()
                 while check_if_intersect(negative_food, new_direction):
                     n_f = find_intersect_food(negative_food, new_direction)
                     if n_f != False:
-                        print('innn')
+                        print('expansion grow')
+                        #Define plane
                         norm_n_f = -n_f['cord'] + node['cord']
-                        z_1 = -(norm_n_f[0]+norm_n_f[1])/norm_n_f[3]
-                        new_direction = node['cord'] + g_r*(-node['cord'] + np.array([x_1,y_1, z_1]))
-                nodes[i]['cord'] = new_direction
+                        planeNormal = norm_n_f
+                        planePoint = (n_f['r']*norm_n_f/np.linalg.norm(norm_n_f)) + n_f['cord'] #Any point on the plane
+                        #Define ray
+                        rayDirection = -node['cord'] + n_f['cord']
+                        rayPoint = n_f['cord'] #Any point along the ray
+                        psi = LinePlaneCollision(planeNormal, planePoint, rayDirection, rayPoint)
+                        new_direction = -rayPoint + psi + planeNormal
+                    counter += 1
+                    if counter <= attempts:
+                        litmus = True
+                        break
+                if not litmus:
+                    nodes[i]['cord'] = new_direction
             if new_state == 'b' and len(nodes) < max_nodes:
-                cord_1 = node['cord'] + g_r*(-node['cord'] + closest_food['cord']) + 2*random.random()
-                cord_2 = node['cord'] + g_r*(-node['cord'] + random_food['cord']) + 2*random.random()
-                while check_if_intersect(negative_food, cord_1) and check_if_intersect(negative_food, cord_2):
-                    cord_1 = node['cord'] + g_r*(-node['cord'] + closest_food['cord']) + 2*random.random()
-                    cord_2 = node['cord'] + g_r*(-node['cord'] + random_food['cord']) + 2*random.random()
-                new_node_1 = {'cord': cord_1, 'state': 'g'}
-                new_node_2 = {'cord': cord_2, 'state': 'g'}
-                new_nodes.append(new_node_1)
-                new_nodes.append(new_node_2)
+                cord_1 = node['cord'] + g_r*(-node['cord'] + closest_food['cord']) 
+                litmus = False
+                counter = 0
+                while check_if_intersect(negative_food, cord_1):
+                    n_f = find_intersect_food(negative_food, cord_1)
+                    if n_f != False:
+                        print('branch grow')
+                        cord_1 = node['cord'] + g_r*(-node['cord'] + closest_food['cord'])
+                        norm_n_f = -n_f['cord'] + node['cord']
+                        #Define plane
+                        planeNormal = norm_n_f
+                        planePoint = (n_f['r']*norm_n_f/np.linalg.norm(norm_n_f)) + n_f['cord'] #Any point on the plane
+                        #Define ray
+                        rayDirection = -node['cord'] + n_f['cord']
+                        rayPoint = n_f['cord'] #Any point along the ray
+                        psi = LinePlaneCollision(planeNormal, planePoint, rayDirection, rayPoint)
+                        cord_1 = -rayPoint + psi + planeNormal
+                    counter += 1
+                    if counter <= attempts:
+                        litmus = True
+                    break
+                if not litmus:
+                    new_node_1 = {'cord': cord_1, 'state': 'g'}
+                    new_nodes.append(new_node_1)
         for i, node in enumerate(nodes):
             if node['state'] == 's':
                 del nodes[i]
@@ -243,13 +285,13 @@ if __name__ == "__main__":
     b_pos = 1
     b_neg = 1
     b_neu = 1
-    nodes = init_points(5,1, -1000)
-    nodes_2 = init_points(10,1, 100)
+    nodes = init_points(5, 1, -110)
+    nodes_2 = init_points(10,1, 0)
     
-    food = init_food(500, sim_min_range, sim_max_range, 5)
+    food = init_food(10, sim_min_range, sim_max_range, 5)
     #food = generate_grid_food(2, -5, 5, 10)
 
-    negative_food = [{'cord': np.array([10, 10, 10]), 'r': 100, 'type': True}]
+    negative_food = [{'cord': np.array([0, 0, 0]), 'r': 100, 'type': True}, {'cord': np.array([180, 180, 0]), 'r': 70, 'type': True}]
     food = subtract_intersecting_food(negative_food, food)
     print(food)
     final_nodes = ""
@@ -271,7 +313,7 @@ if __name__ == "__main__":
         '''tmp_food = food_string.split("\n")
         for i in range(len(tmp_food)):
             sock.sendto(str.encode(tmp_food[i]+"\n"), (UDP_IP, UDP_PORT))'''
-        #sock.sendto(str.encode(nodes_string+nodes_2_string+food_string), (UDP_IP, UDP_PORT))
+        sock.sendto(str.encode(nodes_string+nodes_2_string+food_string), (UDP_IP, UDP_PORT))
         if len(food) == 0:
             break
         generation += 1
