@@ -14,12 +14,12 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 time_to_eat = 1
 population = ['g', 's', 'b']
 g_r = 0.4
-max_nodes = 20
+max_nodes = 5
 sim_min_range = -150
 sim_max_range = 150
 x_1 = 1
 y_1 = 1
-max_readius_slime_connection = 10
+max_readius_slime_connection = 60
 
 
 def LinePlaneCollision(planeNormal, planePoint, rayDirection, rayPoint, epsilon=1e-100):
@@ -271,13 +271,13 @@ if __name__ == "__main__":
     p_pos = [0.3, 0.1, 0.6]
     p_neu = [0.3, 0.1, 0.6]
     nodes = [init_points(5, 1, -110), init_points(5, 1, 80)]
-    nodes = [init_points(5, 1, -110), []]
+    #nodes = [init_points(5, 1, -110), []]
 
-    food_1 = init_food(500, sim_min_range, sim_max_range, 5)
-    food_2 = init_food(250, sim_min_range, sim_max_range, 5)
-    # food = generate_grid_food(2, -5, 5, 10)
+    food_1 = init_food(250, sim_min_range, sim_max_range, 5)
+    food_2 = init_food(150, sim_min_range, sim_max_range, 5)
+    #food = generate_grid_food(2, -5, 5, 10)
 
-    food_2 = [{'cord': np.array([0, 0, 0]), 'r': 50, 'type': True}, {'cord': np.array([90, 90, 90]), 'r': 40, 'type': True}]
+    #food_2 = [{'cord': np.array([0, 0, 0]), 'r': 150, 'type': True}, {'cord': np.array([100, 100, 100]), 'r': 40, 'type': True}]
     food_1 = subtract_intersecting_food(food_2, food_1)
     food = [food_1, food_2]
     color = ['r', 'b']
@@ -288,6 +288,7 @@ if __name__ == "__main__":
 
     generation = 0
     while True:
+        empty_food = False
         nodes, food = generate_cycles(nodes, food, p_pos, p_neg, p_neu)
         nodes_string = ""
         food_string = ""
@@ -298,8 +299,10 @@ if __name__ == "__main__":
         food_csv_string += food_string
         nodes_csv_string += nodes_string
         sock.sendto(str.encode(nodes_string+food_string), (UDP_IP, UDP_PORT))
-        
-        if not any(food) or not any(nodes):
+        for food_set in food:
+            if len(food_set) == 0:
+                empty_food = True
+        if not any(food) or not any(nodes) or empty_food:
             break
         generation += 1
     text_file = open("res.txt", "w")
