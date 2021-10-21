@@ -42,7 +42,7 @@ def find_close_node(node, nodes):
         return selection[random.randint(0, len(selection)-1)]
     return False
 
-def plot_values(nodes, t, final_csv):
+def plot_values(nodes, t, color, final_csv):
     for node in nodes:
         node_2 = find_close_node(node, nodes)
         node_3 = find_close_node(node, nodes)
@@ -96,8 +96,8 @@ def init_points(n, init_r, factor):
         r = init_r*random.random()
         x = r*np.cos(theta)
         y = r*np.sin(theta)
-        # z = r*np.cos(phi)
-        z = 0
+        z = r*np.cos(phi)
+        #z = 0
         random_point = np.array([x, y, z]) + factor
         nodes.append({'cord': random_point, 'state': 'g'})
     return nodes
@@ -109,8 +109,8 @@ def init_food(n, min_bound, max_bound, r_range):
         r = r_range*random.random()+3
         x = random.uniform(min_bound, max_bound)
         y = random.uniform(min_bound, max_bound)
-        # z = random.uniform(min_bound, max_bound)
-        z = 0
+        z = random.uniform(min_bound, max_bound)
+        #z = 0
         food.append({'cord': np.array([x, y, z]),
                     'count': 0, 'r': r, 'type': True})
     return food
@@ -277,7 +277,7 @@ if __name__ == "__main__":
     food_2 = init_food(250, sim_min_range, sim_max_range, 5)
     # food = generate_grid_food(2, -5, 5, 10)
 
-    food_2 = [{'cord': np.array([0, 0, 0]), 'r': 50, 'type': True}, {'cord': np.array([90, 90, 0]), 'r': 40, 'type': True}]
+    food_2 = [{'cord': np.array([0, 0, 0]), 'r': 50, 'type': True}, {'cord': np.array([90, 90, 90]), 'r': 40, 'type': True}]
     food_1 = subtract_intersecting_food(food_2, food_1)
     food = [food_1, food_2]
     color = ['r', 'b']
@@ -291,8 +291,8 @@ if __name__ == "__main__":
         nodes, food = generate_cycles(nodes, food, p_pos, p_neg, p_neu)
         nodes_string = ""
         food_string = ""
-        for nodes_set in nodes:
-            nodes_string += plot_values(nodes_set, generation, "")
+        for i, nodes_set in enumerate(nodes):
+            nodes_string += plot_values(nodes_set, generation, color[i], "")
         for i, food_set in enumerate(food):
             food_string += plot_food(food_set,generation, color[i], "")
         food_csv_string += food_string
