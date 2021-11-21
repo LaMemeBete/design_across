@@ -6,16 +6,14 @@ from scipy.interpolate import interp1d
 import socket
 import random
 import copy
-UDP_IP = "127.0.0.1"
-UDP_PORT = 6400
-MESSAGE = ""
+import asyncio
+import websockets
 attempts = 20
-# Internet socket.SOCK_DGRAM) # UDP
-sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-time_to_eat = 1000
+time_to_eat = 10
+
 population = ['g', 's', 'b']
 g_r = 0.4
-max_nodes = 10
+max_nodes = 30
 sim_min_range = -150
 sim_max_range = 150
 x_1 = 1
@@ -43,15 +41,25 @@ def find_close_node(node, nodes):
     return False
 
 def plot_values(nodes, t, color, final_csv, recent_node):
-    '''for node in nodes:
+    for node in nodes:
         node_2 = find_close_node(node, nodes)
         node_3 = find_close_node(node, nodes)
+        node_4 = find_close_node(node, nodes)
+        node_5 = find_close_node(node, nodes)
+        node_6 = find_close_node(node, nodes)
         if node_2:
-            final_csv += str(node['cord'][0]) + ',' + str(node['cord'][1]) + ',' + str(node['cord'][2]) + ',' + str(nodes[node_2]['cord'][0]) + ',' + str(nodes[node_2]['cord'][1]) + ',' + str(nodes[node_2]['cord'][2]) + ',' + str(t) + ',' + 'line' +  ',' + color + '\n'
+            final_csv += str(node['cord'][0]) + ',' + str(node['cord'][1]) + ',' + str(node['cord'][2]) + ',' + str(node_2['cord'][0]) + ',' + str(node_2['cord'][1]) + ',' + str(node_2['cord'][2]) + ',' + str(t) + ',' + 'line' +  ',' + color + '\n'
         if node_3:
-            final_csv += str(node['cord'][0]) + ',' + str(node['cord'][1]) + ',' + str(node['cord'][2]) + ',' + str(nodes[node_3]['cord'][0]) + ',' + str(nodes[node_3]['cord'][1]) + ',' + str(nodes[node_3]['cord'][2]) + ',' + str(t) + ',' + 'line' +  ',' + color + '\n'
-    '''
-    if recent_node == False:
+            final_csv += str(node['cord'][0]) + ',' + str(node['cord'][1]) + ',' + str(node['cord'][2]) + ',' + str(node_3['cord'][0]) + ',' + str(node_3['cord'][1]) + ',' + str(node_3['cord'][2]) + ',' + str(t) + ',' + 'line' +  ',' + color + '\n'
+        if node_4:
+            final_csv += str(node['cord'][0]) + ',' + str(node['cord'][1]) + ',' + str(node['cord'][2]) + ',' + str(node_4['cord'][0]) + ',' + str(node_4['cord'][1]) + ',' + str(node_4['cord'][2]) + ',' + str(t) + ',' + 'line' +  ',' + color + '\n'
+        if node_5:
+            final_csv += str(node['cord'][0]) + ',' + str(node['cord'][1]) + ',' + str(node['cord'][2]) + ',' + str(node_5['cord'][0]) + ',' + str(node_5['cord'][1]) + ',' + str(node_5['cord'][2]) + ',' + str(t) + ',' + 'line' +  ',' + color + '\n'
+        if node_6:
+            final_csv += str(node['cord'][0]) + ',' + str(node['cord'][1]) + ',' + str(node['cord'][2]) + ',' + str(node_6['cord'][0]) + ',' + str(node_6['cord'][1]) + ',' + str(node_6['cord'][2]) + ',' + str(t) + ',' + 'line' +  ',' + color + '\n'
+    return final_csv, ""
+    
+    '''if recent_node == False:
         node = random.choice(nodes)
     else:
         node = recent_node
@@ -61,7 +69,7 @@ def plot_values(nodes, t, color, final_csv, recent_node):
     else:
         node_2 = closest_node
         final_csv += str(node['cord'][0]) + ',' + str(node['cord'][1]) + ',' + str(node['cord'][2]) + ',' + str(node_2['cord'][0]) + ',' + str(node_2['cord'][1]) + ',' + str(node_2['cord'][2]) + ',' + str(t) + ',' + 'line' +  ',' + color + '\n'
-        return final_csv, node_2
+        return final_csv, node_2'''
 
 def plot_food(food, t, color, final_food_csv):
     for f in food:
@@ -145,13 +153,14 @@ def generate_food_from_file(filename, r_range):
     with open(filename) as file:
         for line in file:
             tmp_food = line.rstrip().split(",")
+            print(tmp_food)
             tmp_food = [float(i) for i in tmp_food]
             for i, val in enumerate(tmp_food):
                 values[i].append(val)
     food_scaled = rescale_points(values)
     for i in range(len(food_scaled[0])):
         tmp_food = [food_scaled[0][i], food_scaled[1][i], food_scaled[2][i]]
-        food.append({'cord': np.array([80*tmp_food[0], 80*tmp_food[1], 80*tmp_food[2]]), 'count': 0, 'r': r_range*random.random()+3, 'type': True})
+        food.append({'cord': np.array([5*tmp_food[0],5*tmp_food[1], 5*tmp_food[2]]), 'count': 0, 'r': r_range*random.random()+3, 'type': True})
     return food
 
 
@@ -303,14 +312,13 @@ def generate_cycles(nodes, food, p_neg, p_pos, p_neu):
     text_file.close()
     return nodes_to_return, food
 
-
-if __name__ == "__main__":
+async def run_model(websocket):
     # ['g', 's', 'b']
     p_neg = [0.3, 0.1, 0.6]
     p_pos = [0.3, 0.1, 0.6]
     p_neu = [0.3, 0.1, 0.6]
-    nodes = [init_points(5, 1, -110), init_points(5, 1, 80)]
-    #nodes = [init_points(10, 1, -110), []]
+    #nodes = [init_points(5, 1, -110), init_points(5, 1, 80)]
+    nodes = [init_points(10, 1, -110)]
 
     food_1 = init_food(250, sim_min_range, sim_max_range, 5)
     food_2 = init_food(150, sim_min_range, sim_max_range, 5)
@@ -318,6 +326,7 @@ if __name__ == "__main__":
 
     food_3 = generate_food_from_file("pt_radiation.txt", 5)
     food_4 = generate_food_from_file("pt_stress.txt", 5)
+    food_5 = generate_food_from_file("apple.txt", 1)
     #food_4 = subtract_intersecting_food(food_3, food_4)
 
     food_2 = [{'cord': np.array([0, 0, 0]), 'r': 80, 'type': True}, {'cord': np.array([100, 100, 100]), 'r': 1, 'type': True}]
@@ -326,7 +335,8 @@ if __name__ == "__main__":
 
 
     #food = [food_1, food_2]
-    food = [food_3, food_4]
+    #food = [food_3, food_4]
+    food = [food_5]
     color = ['r', 'b']
     final_nodes = ""
     food_csv_string = ""
@@ -341,25 +351,43 @@ if __name__ == "__main__":
         food_string = ""
         nodes_string = ""
         for i, nodes_set in enumerate(nodes):
+            if color[i] == 'b':
+                print(recent_node[i])
             tmp_nodes_string, tmp = plot_values(nodes_set, generation, color[i], "", recent_node[i])
             recent_node[i] = copy.deepcopy(tmp)
+            if color[i] == 'b':
+                print(recent_node[i])
+            print("----")
             nodes_string += tmp_nodes_string
         for i, food_set in enumerate(food):
             food_string += plot_food(food_set,generation, color[i], "")
         food_csv_string += food_string
         nodes_csv_string += nodes_string
-        sock.sendto(str.encode(nodes_string+food_string), (UDP_IP, UDP_PORT))
+
+        #what to send
+        await websocket.send(nodes_string+food_string)
+        
+
         for food_set in food:
             if len(food_set) == 0:
                 empty_food = True
         if not any(food) or not any(nodes) or empty_food:
             break
         generation += 1
-    text_file = open("res.txt", "w")
+    '''text_file = open("res.txt", "w")
     n = text_file.write(nodes_csv_string)
     text_file.close()
 
     text_file = open("food_res.txt", "w")
     n = text_file.write(food_csv_string)
-    text_file.close()
-    sock.sendto(str.encode('d'), (UDP_IP, UDP_PORT))
+    text_file.close()'''
+    
+
+        
+
+async def main():
+    async with websockets.serve(run_model, "", 8001):
+        await asyncio.Future()  # run forever
+
+if __name__ == "__main__":
+    asyncio.run(main())

@@ -1,13 +1,18 @@
-import socket
-import time
-import random
-UDP_IP = "127.0.0.1"
-UDP_PORT = 6400
-MESSAGE = "Hello, World!"
-print("UDP target IP: %s" % UDP_IP)
-print("UDP target port: %s" % UDP_PORT)
-print("message: %s" % MESSAGE)
-sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # Internet socket.SOCK_DGRAM) # UDP
-while True:
-    time.sleep(1)
-    sock.sendto(str.encode(MESSAGE + str(random.random())), (UDP_IP, UDP_PORT))
+import asyncio
+
+import websockets
+
+
+async def handler(websocket):
+    while True:
+        #message = await websocket.recv()
+        await websocket.send("hi")
+        
+
+async def main():
+    async with websockets.serve(handler, "", 8001):
+        await asyncio.Future()  # run forever
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
