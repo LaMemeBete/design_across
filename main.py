@@ -9,11 +9,11 @@ import copy
 import asyncio
 import websockets
 attempts = 20
-time_to_eat = 10
+time_to_eat = 1
 
 population = ['g', 's', 'b']
-g_r = 0.4
-max_nodes = 30
+g_r = 1
+max_nodes = 20
 sim_min_range = -150
 sim_max_range = 150
 x_1 = 1
@@ -35,6 +35,7 @@ def find_close_node(node, nodes):
     selection = []
     for i, cand in enumerate(nodes):
         if np.linalg.norm(cand['cord'] - node['cord']) < max_readius_slime_connection:
+            return cand
             selection.append(i)
     if len(selection) > 0:
         return nodes[selection[random.randint(0, len(selection)-1)]]
@@ -43,20 +44,8 @@ def find_close_node(node, nodes):
 def plot_values(nodes, t, color, final_csv, recent_node):
     for node in nodes:
         node_2 = find_close_node(node, nodes)
-        node_3 = find_close_node(node, nodes)
-        node_4 = find_close_node(node, nodes)
-        node_5 = find_close_node(node, nodes)
-        node_6 = find_close_node(node, nodes)
         if node_2:
             final_csv += str(node['cord'][0]) + ',' + str(node['cord'][1]) + ',' + str(node['cord'][2]) + ',' + str(node_2['cord'][0]) + ',' + str(node_2['cord'][1]) + ',' + str(node_2['cord'][2]) + ',' + str(t) + ',' + 'line' +  ',' + color + '\n'
-        if node_3:
-            final_csv += str(node['cord'][0]) + ',' + str(node['cord'][1]) + ',' + str(node['cord'][2]) + ',' + str(node_3['cord'][0]) + ',' + str(node_3['cord'][1]) + ',' + str(node_3['cord'][2]) + ',' + str(t) + ',' + 'line' +  ',' + color + '\n'
-        if node_4:
-            final_csv += str(node['cord'][0]) + ',' + str(node['cord'][1]) + ',' + str(node['cord'][2]) + ',' + str(node_4['cord'][0]) + ',' + str(node_4['cord'][1]) + ',' + str(node_4['cord'][2]) + ',' + str(t) + ',' + 'line' +  ',' + color + '\n'
-        if node_5:
-            final_csv += str(node['cord'][0]) + ',' + str(node['cord'][1]) + ',' + str(node['cord'][2]) + ',' + str(node_5['cord'][0]) + ',' + str(node_5['cord'][1]) + ',' + str(node_5['cord'][2]) + ',' + str(t) + ',' + 'line' +  ',' + color + '\n'
-        if node_6:
-            final_csv += str(node['cord'][0]) + ',' + str(node['cord'][1]) + ',' + str(node['cord'][2]) + ',' + str(node_6['cord'][0]) + ',' + str(node_6['cord'][1]) + ',' + str(node_6['cord'][2]) + ',' + str(t) + ',' + 'line' +  ',' + color + '\n'
     return final_csv, ""
     
     '''if recent_node == False:
@@ -160,7 +149,7 @@ def generate_food_from_file(filename, r_range):
     food_scaled = rescale_points(values)
     for i in range(len(food_scaled[0])):
         tmp_food = [food_scaled[0][i], food_scaled[1][i], food_scaled[2][i]]
-        food.append({'cord': np.array([5*tmp_food[0],5*tmp_food[1], 5*tmp_food[2]]), 'count': 0, 'r': r_range*random.random()+3, 'type': True})
+        food.append({'cord': np.array([tmp_food[0],tmp_food[1], tmp_food[2]]), 'count': 0, 'r': r_range, 'type': True})
     return food
 
 
@@ -233,7 +222,7 @@ def generate_one_cycle(nodes,food, p_pos, p_neg, p_neu, negative_food):
             litmus = False
             counter = 0
             new_direction = node['cord'] + g_r * (-node['cord'] + closest_food['cord'])
-            while check_if_intersect(negative_food, new_direction):
+            '''while check_if_intersect(negative_food, new_direction):
                 n_f = find_intersect_food(negative_food, new_direction)
                 if n_f != False:
                     #print('expansion grow')
@@ -253,12 +242,13 @@ def generate_one_cycle(nodes,food, p_pos, p_neg, p_neu, negative_food):
                     litmus = True
                     break
             if not litmus:
-                nodes[i]['cord'] = new_direction
+                nodes[i]['cord'] = new_direction'''
+            nodes[i]['cord'] = new_direction
         if new_state == 'b' and len(nodes) < max_nodes:
             cord_1 = node['cord'] + g_r * (-node['cord'] + closest_food['cord'])
             litmus = False
             counter = 0
-            while check_if_intersect(negative_food, cord_1):
+            '''while check_if_intersect(negative_food, cord_1):
                 n_f = find_intersect_food(negative_food, cord_1)
                 if n_f != False:
                     #print('branch grow')
@@ -279,7 +269,9 @@ def generate_one_cycle(nodes,food, p_pos, p_neg, p_neu, negative_food):
                 break
             if not litmus:
                 new_node_1 = {'cord': cord_1, 'state': 'g'}
-                new_nodes.append(new_node_1)
+                new_nodes.append(new_node_1)'''
+            new_node_1 = {'cord': cord_1, 'state': 'g'}
+            new_nodes.append(new_node_1)
     for i, node in enumerate(nodes):
         if node['state'] == 's':
             del nodes[i]
@@ -317,8 +309,18 @@ async def run_model(websocket):
     p_neg = [0.3, 0.1, 0.6]
     p_pos = [0.3, 0.1, 0.6]
     p_neu = [0.3, 0.1, 0.6]
-    #nodes = [init_points(5, 1, -110), init_points(5, 1, 80)]
-    nodes = [init_points(10, 1, -110)]
+    #nodes = [init_points(5, 1, 0), init_points(5, 1, 0)]
+    #nodes = [init_points(5, 1, 0)]
+    #nodes = [init_points(5, 1, 0), init_points(5, 1, 0), init_points(5, 1, 0)]
+    nodes = [init_points(5, 1, 0), 
+            init_points(5, 1, 0),
+            init_points(5, 1, 0),
+            init_points(5, 1, 0),
+            init_points(5, 1, 0),
+            init_points(5, 1, 0),
+            init_points(5, 1, 0)]
+    
+    nodes = [init_points(5, 1, 0), init_points(5, 1, 0), init_points(5, 1, 0), init_points(5, 1, 0)]
 
     food_1 = init_food(250, sim_min_range, sim_max_range, 5)
     food_2 = init_food(150, sim_min_range, sim_max_range, 5)
@@ -327,24 +329,30 @@ async def run_model(websocket):
     food_3 = generate_food_from_file("pt_radiation.txt", 5)
     food_4 = generate_food_from_file("pt_stress.txt", 5)
     food_5 = generate_food_from_file("apple.txt", 1)
+    body = generate_food_from_file("body.txt", 1)
+    eyes_white = generate_food_from_file("eyes_white.txt", 1)
+    eyes_black = generate_food_from_file("eyes_black.txt", 1)
+    lips = generate_food_from_file("lips.txt", 1)
+
     #food_4 = subtract_intersecting_food(food_3, food_4)
 
-    food_2 = [{'cord': np.array([0, 0, 0]), 'r': 80, 'type': True}, {'cord': np.array([100, 100, 100]), 'r': 1, 'type': True}]
-    food_1 = subtract_intersecting_food(food_2, food_1)
+    #food_2 = [{'cord': np.array([0, 0, 0]), 'r': 80, 'type': True}, {'cord': np.array([100, 100, 100]), 'r': 1, 'type': True}]
+    #food_1 = subtract_intersecting_food(food_2, food_1)
 
 
 
     #food = [food_1, food_2]
     #food = [food_3, food_4]
-    food = [food_5]
-    color = ['r', 'b']
+    #food = [lips_1, lips_2, lips_3, lips_4, lips_5, lips_6, lips_7]
+    food = [body, eyes_white, eyes_black, lips]
+    color = ['0x0000ff', '0xff0ffff', '0x000000', '0xff0000']
     final_nodes = ""
     food_csv_string = ""
     nodes_csv_string = ""
     nodes_2_csv_String = ""
 
     generation = 0
-    recent_node = [False, False]
+    recent_node = [False, False, False, False, False, False, False]
     while True:
         empty_food = False
         nodes, food = generate_cycles(nodes, food, p_pos, p_neg, p_neu)
@@ -371,8 +379,7 @@ async def run_model(websocket):
         for food_set in food:
             if len(food_set) == 0:
                 empty_food = True
-        if not any(food) or not any(nodes) or empty_food:
-            break
+        
         generation += 1
     '''text_file = open("res.txt", "w")
     n = text_file.write(nodes_csv_string)
