@@ -1,13 +1,16 @@
 import random
 import numpy as np
-import serial
 import time
 from scipy.interpolate import interp1d
-import socket
 import random
 import copy
 import asyncio
 import websockets
+import argparse
+import os
+
+INPUT_DATA_LOCATION = './data/'
+
 attempts = 20
 time_to_eat = 1
 
@@ -18,6 +21,7 @@ sim_min_range = -150
 sim_max_range = 150
 x_1 = 1
 y_1 = 1
+min_distance_food = 10
 max_readius_slime_connection = 100
 
 
@@ -90,6 +94,8 @@ def find_closest_food(node, food, rand):
     closest_food = {'cord': np.array(
         [0, 0, 0]), 'r': 1, 'type': True, 'count': 0}
     for i in range(len(food)):
+        if np.linalg.norm(node['cord'] - np.array(food[i]['cord'])) < min_distance_food:
+            return food[i]
         if np.linalg.norm(node['cord'] - np.array(food[i]['cord'])) < max_val:
             max_val = np.linalg.norm(node['cord'] - np.array(food[i]['cord']))
             closest_food = food[i]
@@ -215,8 +221,8 @@ def generate_one_cycle(nodes,food, p_pos, p_neg, p_neu, negative_food):
         new_state = random.choices(population, weights=weights, k=1)[0]
         node['state'] = new_state
         closest_food = find_closest_food(node, food, False)
-        random_food = find_closest_food(node, food, True)
-        if closest_food == False or random_food == False:
+        #random_food = find_closest_food(node, food, True)
+        if closest_food == False:
             break
         if new_state == 'g':
             litmus = False
@@ -309,43 +315,17 @@ async def run_model(websocket):
     p_neg = [0.3, 0.1, 0.6]
     p_pos = [0.3, 0.1, 0.6]
     p_neu = [0.3, 0.1, 0.6]
-    #nodes = [init_points(5, 1, 0), init_points(5, 1, 0)]
-    #nodes = [init_points(5, 1, 0)]
-    #nodes = [init_points(5, 1, 0), init_points(5, 1, 0), init_points(5, 1, 0)]
-    nodes = [init_points(5, 1, 0), 
-            init_points(5, 1, 0),
-            init_points(5, 1, 0),
-            init_points(5, 1, 0),
-            init_points(5, 1, 0),
-            init_points(5, 1, 0),
-            init_points(5, 1, 0)]
-    
-    nodes = [init_points(5, 1, 0), init_points(5, 1, 0), init_points(5, 1, 0), init_points(5, 1, 0)]
-
-    food_1 = init_food(250, sim_min_range, sim_max_range, 5)
-    food_2 = init_food(150, sim_min_range, sim_max_range, 5)
-    food = generate_grid_food(2, -5, 5, 10)
-
-    food_3 = generate_food_from_file("pt_radiation.txt", 5)
-    food_4 = generate_food_from_file("pt_stress.txt", 5)
-    food_5 = generate_food_from_file("apple.txt", 1)
-    body = generate_food_from_file("body.txt", 1)
-    eyes_white = generate_food_from_file("eyes_white.txt", 1)
-    eyes_black = generate_food_from_file("eyes_black.txt", 1)
-    lips = generate_food_from_file("lips.txt", 1)
-
-    #food_4 = subtract_intersecting_food(food_3, food_4)
-
-    #food_2 = [{'cord': np.array([0, 0, 0]), 'r': 80, 'type': True}, {'cord': np.array([100, 100, 100]), 'r': 1, 'type': True}]
-    #food_1 = subtract_intersecting_food(food_2, food_1)
 
 
-
-    #food = [food_1, food_2]
-    #food = [food_3, food_4]
-    #food = [lips_1, lips_2, lips_3, lips_4, lips_5, lips_6, lips_7]
-    food = [body, eyes_white, eyes_black, lips]
-    color = ['0x0000ff', '0xff0ffff', '0x000000', '0xff0000']
+    food = []
+    color = []
+    nodes = []
+    dir_name = INPUT_DATA_LOCATION+args.dataset
+    for filename in os.listdir(dir_name):
+        if filename.endswith(".txt"):
+            food.append(generate_food_from_file(dir_name+'/'+filename, 5))
+            color.append(filename[:-4])
+            nodes.append(init_points(5, 1, 0))
     final_nodes = ""
     food_csv_string = ""
     nodes_csv_string = ""
@@ -390,11 +370,22 @@ async def run_model(websocket):
     text_file.close()'''
     
 
-        
+parser = argparse.ArgumentParser()
+
+parser.add_argument(
+    '--dataset', 
+    required=True,
+    type=str,
+    help='Obj name'
+) 
 
 async def main():
     async with websockets.serve(run_model, "", 8001):
         await asyncio.Future()  # run forever
 
 if __name__ == "__main__":
+    args = parser.parse_args()
     asyncio.run(main())
+
+
+    
