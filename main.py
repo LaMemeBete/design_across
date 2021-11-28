@@ -15,14 +15,14 @@ attempts = 20
 time_to_eat = 1
 
 population = ['g', 's', 'b']
-g_r = 1
-max_nodes = 20
+g_r = 0.4
+max_nodes = 10
 sim_min_range = -150
 sim_max_range = 150
 x_1 = 1
 y_1 = 1
-min_distance_food = 10
-max_readius_slime_connection = 100
+min_distance_food = 1
+max_readius_slime_connection = 40
 
 
 def LinePlaneCollision(planeNormal, planePoint, rayDirection, rayPoint, epsilon=1e-100):
@@ -38,8 +38,8 @@ def LinePlaneCollision(planeNormal, planePoint, rayDirection, rayPoint, epsilon=
 def find_close_node(node, nodes):
     selection = []
     for i, cand in enumerate(nodes):
-        if np.linalg.norm(cand['cord'] - node['cord']) < max_readius_slime_connection:
-            return cand
+        if np.linalg.norm(cand['cord'] - node['cord']) < max_readius_slime_connection and np.linalg.norm(cand['cord'] - node['cord']) != 0:
+            #return cand
             selection.append(i)
     if len(selection) > 0:
         return nodes[selection[random.randint(0, len(selection)-1)]]
