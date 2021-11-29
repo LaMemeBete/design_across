@@ -26,7 +26,8 @@ def generate_vertices(dir_name):
                     line = line.rstrip()
                     if len(line) > 1:
                         if line[0] == "v" and line[1] == " ":
-                            contents.append(','.join(line[2:].split(" \t\t")))
+                            contents.append(','.join(line[2:].split(" ")))
+                            #contents.append(','.join(line[2:].split(" \t\t")))
             save_str(dir_name+'/'+filename[:-3]+'txt', contents)
 
 parser = argparse.ArgumentParser()

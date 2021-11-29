@@ -15,14 +15,14 @@ attempts = 20
 time_to_eat = 1
 
 population = ['g', 's', 'b']
-g_r = 0.4
-max_nodes = 10
+g_r = 1
+max_nodes = 20
 sim_min_range = -150
 sim_max_range = 150
 x_1 = 1
 y_1 = 1
 min_distance_food = 1
-max_readius_slime_connection = 40
+max_readius_slime_connection = 10
 
 
 def LinePlaneCollision(planeNormal, planePoint, rayDirection, rayPoint, epsilon=1e-100):
