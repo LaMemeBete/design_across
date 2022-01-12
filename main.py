@@ -11,7 +11,7 @@ import os
 
 INPUT_DATA_LOCATION = './data/'
 
-attempts = 20
+attempts = 40
 time_to_eat = 1
 
 population = ['g', 's', 'b']
@@ -22,7 +22,7 @@ sim_max_range = 150
 x_1 = 1
 y_1 = 1
 min_distance_food = 1
-max_readius_slime_connection = 10
+max_readius_slime_connection = 5
 
 
 def LinePlaneCollision(planeNormal, planePoint, rayDirection, rayPoint, epsilon=1e-100):
@@ -312,6 +312,7 @@ def generate_cycles(nodes, food, p_neg, p_pos, p_neu):
 
 async def run_model(websocket):
     # ['g', 's', 'b']
+    communication = True
     p_neg = [0.3, 0.1, 0.6]
     p_pos = [0.3, 0.1, 0.6]
     p_neu = [0.3, 0.1, 0.6]
@@ -323,7 +324,7 @@ async def run_model(websocket):
     dir_name = INPUT_DATA_LOCATION+args.dataset
     for filename in os.listdir(dir_name):
         if filename.endswith(".txt"):
-            food.append(generate_food_from_file(dir_name+'/'+filename, 5))
+            food.append(generate_food_from_file(dir_name+'/'+filename, 0.5))
             color.append(filename[:-4])
             nodes.append(init_points(5, 1, 0))
     final_nodes = ""
@@ -333,7 +334,7 @@ async def run_model(websocket):
 
     generation = 0
     recent_node = [False, False, False, False, False, False, False]
-    while True:
+    while communication:
         empty_food = False
         nodes, food = generate_cycles(nodes, food, p_pos, p_neg, p_neu)
         food_string = ""
@@ -353,6 +354,8 @@ async def run_model(websocket):
         nodes_csv_string += nodes_string
 
         #what to send
+        if len(food_string) == 0:
+            communication = False
         await websocket.send(nodes_string+food_string)
         
 
